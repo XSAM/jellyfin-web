@@ -795,6 +795,19 @@ class ItemsView {
             }
         }
 
+        function updateParentFolderNavigation(currentItem) {
+            const hasParentFolder = Boolean(currentItem?.ParentId && (currentItem?.IsFolder || currentItem?.Type === 'CollectionFolder'));
+
+            if (hasParentFolder) {
+                LibraryMenu.setParentFolder({
+                    parentId: currentItem.ParentId,
+                    serverId: currentItem.ServerId || self.params.serverId
+                });
+            } else {
+                LibraryMenu.setParentFolder();
+            }
+        }
+
         function autoFocus() {
             import('../components/autoFocuser').then(({ default: autoFocuser }) => {
                 autoFocuser.autoFocus(view);
@@ -869,6 +882,7 @@ class ItemsView {
                 }
 
                 self.currentItem = item;
+                updateParentFolderNavigation(item);
                 const refresh = !isRestored;
                 self.itemsContainer.resume({
                     refresh: refresh
@@ -963,6 +977,7 @@ class ItemsView {
             self.btnSortText = null;
             self.btnSortIcon = null;
             self.alphaPickerElement = null;
+            LibraryMenu.setParentFolder();
         });
     }
 
