@@ -6,12 +6,14 @@ import cardBuilder from '../components/cardbuilder/cardBuilder';
 import loading from '../components/loading/loading';
 import AlphaNumericShortcuts from '../scripts/alphanumericshortcuts';
 import libraryBrowser from '../scripts/libraryBrowser';
+import layoutManager from '../components/layoutManager';
 import { playbackManager } from '../components/playback/playbackmanager';
 import AlphaPicker from '../components/alphaPicker/alphaPicker';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
 import '../elements/emby-itemscontainer/emby-itemscontainer';
 import '../elements/emby-scroller/emby-scroller';
 import LibraryMenu from '../scripts/libraryMenu';
+import { appRouter } from '../components/router/appRouter';
 import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
 import { ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models/item-sort-by';
 import { stopMultiSelect } from 'components/multiSelect/multiSelect';
@@ -795,6 +797,30 @@ class ItemsView {
             }
         }
 
+        function updateParentFolderNavigation(currentItem) {
+            const hasParentFolder = Boolean(currentItem?.ParentId && (currentItem?.IsFolder || currentItem?.Type === 'CollectionFolder'));
+            let parentFolderNavigation;
+
+            if (hasParentFolder) {
+                parentFolderNavigation = {
+                    parentId: currentItem.ParentId,
+                    serverId: currentItem.ServerId || self.params.serverId
+                };
+            }
+
+            self.parentFolderNavigation = parentFolderNavigation;
+            LibraryMenu.setParentFolder(parentFolderNavigation);
+            hideOrShowAll(view.querySelectorAll('.btnParentFolder'), !layoutManager.experimental || !parentFolderNavigation);
+        }
+
+        function showParentFolder() {
+            const parentFolderNavigation = self.parentFolderNavigation;
+
+            if (parentFolderNavigation?.parentId) {
+                appRouter.showItem(parentFolderNavigation.parentId, parentFolderNavigation.serverId);
+            }
+        }
+
         function autoFocus() {
             import('../components/autoFocuser').then(({ default: autoFocuser }) => {
                 autoFocuser.autoFocus(view);
@@ -848,6 +874,7 @@ class ItemsView {
 
         this.btnSortText = view.querySelector('.btnSortText');
         this.btnSortIcon = view.querySelector('.btnSortIcon');
+        bindAll(view.querySelectorAll('.btnParentFolder'), 'click', showParentFolder);
         bindAll(view.querySelectorAll('.btnNewItem'), 'click', onNewItemClick.bind(this));
         this.alphaPickerElement = view.querySelector('.alphaPicker');
         self.itemsContainer.fetchData = fetchData;
@@ -869,6 +896,7 @@ class ItemsView {
                 }
 
                 self.currentItem = item;
+                updateParentFolderNavigation(item);
                 const refresh = !isRestored;
                 self.itemsContainer.resume({
                     refresh: refresh
@@ -963,6 +991,8 @@ class ItemsView {
             self.btnSortText = null;
             self.btnSortIcon = null;
             self.alphaPickerElement = null;
+            self.parentFolderNavigation = null;
+            LibraryMenu.setParentFolder();
         });
     }
 

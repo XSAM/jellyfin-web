@@ -3,6 +3,13 @@
     </div>
     <div class="padded-left padded-right padded-bottom-page">
         <div class="flex align-items-center focuscontainer-x itemsViewSettingsContainer padded-top padded-bottom flex-wrap-wrap">
+            <button is="emby-button" class="btnParentFolder button-flat hide listTextButton-autohide" title="${ParentFolder}">
+                <span class="material-icons arrow_upward" aria-hidden="true"></span>
+                <span>${ParentFolder}</span>
+            </button>
+            <button is="paper-icon-button-light" class="btnParentFolder hide listIconButton-autohide" title="${ParentFolder}">
+                <span class="material-icons arrow_upward" aria-hidden="true"></span>
+            </button>
             <div class="paging"></div>
             <button is="emby-button" class="btnPlay button-flat hide listTextButton-autohide">
                 <span>${HeaderPlayAll}</span>

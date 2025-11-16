@@ -40,6 +40,7 @@ function renderHeader() {
     html += '<button type="button" is="paper-icon-button-light" class="headerButton headerButtonLeft headerBackButton hide"><span class="material-icons ' + (browser.safari ? 'chevron_left' : 'arrow_back') + '" aria-hidden="true"></span></button>';
     html += '<button type="button" is="paper-icon-button-light" class="headerButton headerHomeButton hide barsMenuButton headerButtonLeft"><span class="material-icons home" aria-hidden="true"></span></button>';
     html += '<button type="button" is="paper-icon-button-light" class="headerButton mainDrawerButton barsMenuButton headerButtonLeft hide"><span class="material-icons menu" aria-hidden="true"></span></button>';
+    html += '<button type="button" is="paper-icon-button-light" class="headerButton headerButtonLeft headerParentFolderButton hide"><span class="material-icons arrow_upward" aria-hidden="true"></span></button>';
     html += '<h3 class="pageTitle" aria-hidden="true"></h3>';
     html += '</div>';
     html += '<div class="headerRight">';
@@ -64,6 +65,7 @@ function renderHeader() {
     headerBackButton = skinHeader.querySelector('.headerBackButton');
     headerHomeButton = skinHeader.querySelector('.headerHomeButton');
     mainDrawerButton = skinHeader.querySelector('.mainDrawerButton');
+    headerParentFolderButton = skinHeader.querySelector('.headerParentFolderButton');
     headerUserButton = skinHeader.querySelector('.headerUserButton');
     headerCastButton = skinHeader.querySelector('.headerCastButton');
     headerAudioPlayerButton = skinHeader.querySelector('.headerAudioPlayerButton');
@@ -76,6 +78,7 @@ function renderHeader() {
     bindMenuEvents();
     updateCastIcon();
     updateClock();
+    updateParentFolderButton();
 }
 
 function getCurrentApiClient() {
@@ -96,6 +99,37 @@ function onBackClick() {
     appRouter.back();
 }
 
+function onParentFolderClick() {
+    if (parentFolderNavigation?.parentId) {
+        appRouter.showItem(parentFolderNavigation.parentId, parentFolderNavigation.serverId);
+    }
+}
+
+function updateParentFolderButton() {
+    if (!headerParentFolderButton) {
+        return;
+    }
+
+    if (parentFolderNavigation?.parentId) {
+        headerParentFolderButton.classList.remove('hide');
+    } else {
+        headerParentFolderButton.classList.add('hide');
+    }
+}
+
+function setParentFolder(options) {
+    if (options?.parentId) {
+        parentFolderNavigation = {
+            parentId: options.parentId,
+            serverId: options.serverId
+        };
+    } else {
+        parentFolderNavigation = null;
+    }
+
+    updateParentFolderButton();
+}
+
 function retranslateUi() {
     if (headerBackButton) {
         headerBackButton.title = globalize.translate('ButtonBack');
@@ -107,6 +141,10 @@ function retranslateUi() {
 
     if (mainDrawerButton) {
         mainDrawerButton.title = globalize.translate('Menu');
+    }
+
+    if (headerParentFolderButton) {
+        headerParentFolderButton.title = globalize.translate('ParentFolder');
     }
 
     if (headerSyncButton) {
@@ -233,6 +271,10 @@ function bindMenuEvents() {
 
     if (headerBackButton) {
         headerBackButton.addEventListener('click', onBackClick);
+    }
+
+    if (headerParentFolderButton) {
+        headerParentFolderButton.addEventListener('click', onParentFolderClick);
     }
 
     if (headerSearchButton) {
@@ -698,6 +740,8 @@ let headerSearchButton;
 let headerAudioPlayerButton;
 let headerSyncButton;
 let currentTimeText;
+let headerParentFolderButton;
+let parentFolderNavigation;
 const enableLibraryNavDrawer = layoutManager.desktop;
 const enableLibraryNavDrawerHome = !layoutManager.tv;
 const skinHeader = document.querySelector('.skinHeader');
@@ -810,6 +854,7 @@ pageClassOn('pageshow', 'page', function (e) {
     }
 
     updateMenuForPageType(isDashboardPage, isLibraryPage);
+    setParentFolder();
 
     // TODO: Seems to do nothing? Check if needed (also in other views).
     if (!e.detail.isRestored) {
@@ -859,7 +904,8 @@ const LibraryMenu = {
     setTabs,
     setDefaultTitle,
     setTitle,
-    setTransparentMenu
+    setTransparentMenu,
+    setParentFolder
 };
 
 window.LibraryMenu = LibraryMenu;
