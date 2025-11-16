@@ -1251,21 +1251,39 @@ function renderItemCollections(page, item, apiClient, context) {
         return;
     }
 
-    const query = {
-        userId: apiClient.getCurrentUserId(),
-        fields: 'PrimaryImageAspectRatio'
-    };
+    const parentId = item.ParentId;
+    const parentPromise = parentId
+        ? apiClient.getItem(apiClient.getCurrentUserId(), parentId).catch(() => null)
+        : Promise.resolve(null);
 
-    apiClient.getJSON(apiClient.getUrl(`Items/${item.Id}/Collections`, query)).then((result) => {
-        const items = result?.Items || [];
+    const collectionsPromise = apiClient.getJSON(
+        apiClient.getUrl(`Items/${item.Id}/Collections`, {
+            userId: apiClient.getCurrentUserId(),
+            fields: 'PrimaryImageAspectRatio'
+        })
+    ).then(result => result?.Items || []).catch(() => []);
 
-        if (!items.length) {
+    Promise.all([parentPromise, collectionsPromise]).then(([parentItem, collectionItems]) => {
+        const entries = [];
+
+        if (parentItem && parentItem.Id !== item.Id) {
+            entries.push(parentItem);
+        }
+
+        for (const collection of collectionItems) {
+            if (!entries.some(existing => existing.Id === collection.Id)) {
+                entries.push(collection);
+            }
+        }
+
+        if (!entries.length) {
             section.classList.add('hide');
             return;
         }
 
+        const hasParent = parentItem && parentItem.Id !== item.Id;
         section.classList.remove('hide');
-        cardBuilder.buildCards(items, {
+        cardBuilder.buildCards(entries, {
             parentContainer: section,
             itemsContainer: section.querySelector('.includedInContent'),
             shape: 'overflowPortrait',
@@ -1280,6 +1298,13 @@ function renderItemCollections(page, item, apiClient, context) {
             showYear: false,
             context
         });
+
+        if (hasParent) {
+            const firstCard = section.querySelector('.includedInContent .card');
+            if (firstCard) {
+                firstCard.classList.add('includedIn-parent');
+            }
+        }
     }).catch(() => {
         section.classList.add('hide');
     });
